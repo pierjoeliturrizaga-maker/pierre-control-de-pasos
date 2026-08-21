@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Pasos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f6f3; --panel:#ffffff; --ink:#171a17; --dim:#6c7268; --line:#dfe2da;
+    --accent:#c9861f;
+    --g0:#eceae2; --g1:#c9e3bd; --g2:#8fc97a; --g3:#4f9e42; --g4:#2c6e28;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{ margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:'Space Mono', monospace; }
+  body{ min-height:100vh; min-height:100dvh; padding: max(16px, env(safe-area-inset-top)) 14px max(24px, env(safe-area-inset-bottom)); }
+  .wrap{ max-width:520px; margin:0 auto; }
+
+  header{ margin-bottom:14px; }
+  .title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:20px; }
+  .subtitle{ font-size:10.5px; color:var(--dim); letter-spacing:.06em; margin-top:2px; }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:14px; }
+  .tab{
+    flex:1; text-align:center; padding:10px 0; border-radius:10px;
+    border:1px solid var(--line); background:var(--panel);
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:12.5px; color:var(--dim);
+  }
+  .tab.active{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; }
+  .card-label{ font-size:10px; color:var(--dim); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+
+  /* --- hoy --- */
+  label{ display:block; font-size:10.5px; color:var(--dim); margin-bottom:5px; letter-spacing:.04em; }
+  input[type=date], input[type=number]{
+    width:100%; font-family:'Space Mono', monospace; font-size:14px; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:11px 12px;
+    margin-bottom:12px;
+  }
+  button.primary{
+    width:100%; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;
+    background:var(--ink); color:var(--bg); border:none; border-radius:10px; padding:13px 0;
+  }
+  .entry-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0; border-bottom:1px solid var(--line); font-size:12.5px;
+  }
+  .entry-row:last-child{ border-bottom:none; }
+  .entry-date{ color:var(--dim); }
+  .entry-steps{ font-weight:700; }
+  .entry-del{ color:#c62828; background:none; border:none; font-size:14px; padding:2px 8px; }
+
+  /* --- promedios --- */
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px; }
+  .stat-box{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 8px; text-align:center; }
+  .stat-val{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:18px; }
+  .stat-lbl{ font-size:9px; color:var(--dim); margin-top:4px; text-transform:uppercase; letter-spacing:.05em; }
+  .stat-sub{ font-size:8.5px; color:var(--dim); margin-top:2px; }
+
+  .settings-row{ display:flex; align-items:center; gap:10px; }
+  .settings-row input{ width:80px; margin-bottom:0; }
+
+  /* --- actividad --- */
+  .badge{
+    display:inline-block; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
+    padding:8px 14px; border-radius:20px; margin-bottom:14px;
+  }
+  .heatmap-scroll{ overflow-x:auto; padding-bottom:4px; }
+  .heatmap{ display:flex; gap:3px; width:max-content; }
+  .hm-week{ display:flex; flex-direction:column; gap:3px; }
+  .hm-day{ width:13px; height:13px; border-radius:3px; background:var(--g0); }
+  .hm-day.out{ background:transparent; }
+  .legend{ display:flex; align-items:center; gap:5px; font-size:9.5px; color:var(--dim); margin-top:10px; }
+  .legend .hm-day{ width:11px; height:11px; }
+  .tap-info{ font-size:11.5px; color:var(--dim); margin-top:12px; min-height:16px; }
+  .tap-info b{ color:var(--ink); }
+
+  .empty{ text-align:center; color:var(--dim); font-size:11.5px; padding:24px 10px; }
+
+  /* --- sync status / config --- */
+  .sync-status{ font-size:9.5px; color:var(--dim); margin-top:4px; display:flex; align-items:center; gap:5px; }
+  .sync-dot{ width:6px; height:6px; border-radius:50%; background:var(--line); }
+  .sync-dot.ok{ background:#3f7d3a; }
+  .sync-dot.err{ background:#c62828; }
+  .sync-dot.busy{ background:var(--accent); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse{ 50%{ opacity:0.3; } }
+  .help-text{ font-size:10.5px; color:var(--dim); line-height:1.6; margin-bottom:12px; }
+  .help-text b{ color:var(--ink); }
+  input[type=text], input[type=password]{
+    width:100%; font-family:'Space Mono', monospace; font-size:13px; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:11px 12px;
+    margin-bottom:12px;
+  }
+  .config-msg{ font-size:11px; margin-top:10px; min-height:16px; }
+  .config-msg.ok{ color:#2c5c28; }
+  .config-msg.err{ color:#8f1d1d; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title">Pasos</div>
+    <div class="subtitle">21 ago — 31 dic 2026 · registro diario</div>
+    <div class="sync-status" id="syncStatus"><span class="sync-dot" id="syncDot"></span><span id="syncText">sin conectar a GitHub</span></div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="hoy">Hoy</button>
+    <button class="tab" data-tab="prom">Promedios</button>
+    <button class="tab" data-tab="act">Actividad</button>
+    <button class="tab" data-tab="cfg">Config</button>
+  </div>
+
+  <!-- HOY -->
+  <div class="panel active" id="panel-hoy">
+    <div class="card">
+      <label for="dateInput">Fecha</label>
+      <input type="date" id="dateInput" min="2026-08-21" max="2026-12-31">
+      <label for="stepsInput">Pasos del día</label>
+      <input type="number" id="stepsInput" placeholder="ej. 8400" min="0" step="1">
+      <button class="primary" id="saveBtn">Guardar</button>
+    </div>
+    <div class="card">
+      <div class="card-label">Últimos registros</div>
+      <div id="entryList"><div class="empty">Aún no hay registros.</div></div>
+    </div>
+  </div>
+
+  <!-- PROMEDIOS -->
+  <div class="panel" id="panel-prom">
+    <div class="card">
+      <div class="card-label">Promedio de pasos por día</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-val" id="avgWeek">–</div><div class="stat-lbl">Semana</div></div>
+        <div class="stat-box"><div class="stat-val" id="avgMonth">–</div><div class="stat-lbl">Mes</div></div>
+        <div class="stat-box"><div class="stat-val" id="avgYear">–</div><div class="stat-lbl">Año</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Kcal estimadas (según tu promedio)</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-val" id="kcalDay">–</div><div class="stat-lbl">Por día</div></div>
+        <div class="stat-box"><div class="stat-val" id="kcalWeek">–</div><div class="stat-lbl">Por semana</div></div>
+        <div class="stat-box"><div class="stat-val" id="kcalMonth">–</div><div class="stat-lbl">Por mes</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Totales desde el 21 de agosto</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-val" id="totalSteps">–</div><div class="stat-lbl">Pasos</div></div>
+        <div class="stat-box"><div class="stat-val" id="totalKm">–</div><div class="stat-lbl">Km aprox.</div></div>
+        <div class="stat-box"><div class="stat-val" id="totalDays">–</div><div class="stat-lbl">Días con dato</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Kcal por cada 1000 pasos (ajustable)</div>
+      <div class="settings-row">
+        <input type="number" id="kcalFactor" step="1" min="10" max="120" value="45">
+        <span style="font-size:11px; color:var(--dim);">kcal / 1000 pasos — 40–50 es un promedio razonable</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVIDAD -->
+  <div class="panel" id="panel-act">
+    <div class="card">
+      <div class="card-label">Esta semana</div>
+      <div id="weekBadge"></div>
+      <div class="heatmap-scroll">
+        <div class="heatmap" id="heatmap"></div>
+      </div>
+      <div class="legend">
+        <span>menos</span>
+        <span class="hm-day" style="background:var(--g0)"></span>
+        <span class="hm-day" style="background:var(--g1)"></span>
+        <span class="hm-day" style="background:var(--g2)"></span>
+        <span class="hm-day" style="background:var(--g3)"></span>
+        <span class="hm-day" style="background:var(--g4)"></span>
+        <span>más</span>
+      </div>
+      <div class="tap-info" id="tapInfo">Toca un cuadrito para ver el detalle de ese día.</div>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="panel" id="panel-cfg">
+    <div class="card">
+      <div class="card-label">Conexión con GitHub</div>
+      <div class="help-text">
+        Tus pasos se guardan en un archivo <b>data/pasos.json</b> dentro de tu propio repositorio. El token se queda solo en este celular — nunca se envía a ningún otro lado más que a GitHub.
+      </div>
+      <label for="ghOwner">Usuario de GitHub</label>
+      <input type="text" id="ghOwner" placeholder="pierjoeliturrizaga-maker">
+      <label for="ghRepo">Repositorio</label>
+      <input type="text" id="ghRepo" placeholder="pasos-pierre">
+      <label for="ghToken">Token (fine-grained, permiso Contents: Read and write)</label>
+      <input type="password" id="ghToken" placeholder="github_pat_...">
+      <button class="primary" id="ghSaveBtn">Guardar y conectar</button>
+      <div class="config-msg" id="ghMsg"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Si cambias de celular</div>
+      <div class="help-text">Instala este mismo archivo HTML en el otro celular, entra a Config, pon el mismo usuario/repo y un token nuevo — va a descargar automáticamente todo tu historial desde GitHub.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var LOG_KEY = 'pierre_steps_log_v1';
+  var KCAL_KEY = 'pierre_steps_kcal_factor';
+  var RANGE_START = '2026-08-21';
+  var RANGE_END = '2026-12-31';
+
+  var log = {};
+  try { log = JSON.parse(localStorage.getItem(LOG_KEY) || '{}'); } catch(e){ log = {}; }
+
+  var kcalPer1000 = parseInt(localStorage.getItem(KCAL_KEY) || '45', 10);
+
+  // ---------- GitHub cloud sync ----------
+  var GH_CONFIG_KEY = 'pierre_gh_config_v1';
+  var GH_PATH = 'data/pasos.json';
+  var ghConfig = null;
+  try { ghConfig = JSON.parse(localStorage.getItem(GH_CONFIG_KEY) || 'null'); } catch(e){ ghConfig = null; }
+  var ghSha = null; // sha of the last-known remote file, needed to update it
+  var ghBusy = false;
+
+  var syncDot = document.getElementById('syncDot');
+  var syncText = document.getElementById('syncText');
+
+  function setSync(state, msg){
+    syncDot.className = 'sync-dot' + (state ? ' ' + state : '');
+    syncText.textContent = msg;
+  }
+
+  function b64EncodeUnicode(str){
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1){
+      return String.fromCharCode('0x' + p1);
+    }));
+  }
+  function b64DecodeUnicode(str){
+    return decodeURIComponent(atob(str).split('').map(function(c){
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+  }
+
+  function ghHeaders(){
+    return {
+      'Authorization': 'token ' + ghConfig.token,
+      'Accept': 'application/vnd.github+json'
+    };
+  }
+  function ghUrl(){
+    return 'https://api.github.com/repos/' + ghConfig.owner + '/' + ghConfig.repo + '/contents/' + GH_PATH;
+  }
+
+  async function ghFetchRemote(){
+    var res = await fetch(ghUrl(), { headers: ghHeaders() });
+    if (res.status === 404){ ghSha = null; return {}; }
+    if (!res.ok) throw new Error('GitHub respondió ' + res.status);
+    var data = await res.json();
+    ghSha = data.sha;
+    try { return JSON.parse(b64DecodeUnicode(data.content.replace(/\n/g,''))); }
+    catch(e){ return {}; }
+  }
+
+  async function ghPushRemote(){
+    var body = {
+      message: 'pasos: actualización ' + todayKey(),
+      content: b64EncodeUnicode(JSON.stringify(log, null, 2))
+    };
+    if (ghSha) body.sha = ghSha;
+    var res = await fetch(ghUrl(), {
+      method: 'PUT',
+      headers: Object.assign({ 'Content-Type':'application/json' }, ghHeaders()),
+      body: JSON.stringify(body)
+    });
+    if (!res.ok){
+      var errBody = await res.json().catch(function(){ return {}; });
+      throw new Error(errBody.message || ('GitHub respondió ' + res.status));
+    }
+    var data = await res.json();
+    ghSha = data.content.sha;
+  }
+
+  async function syncFromGitHub(){
+    if (!ghConfig) { setSync('', 'sin conectar a GitHub'); return; }
+    setSync('busy', 'sincronizando…');
+    try {
+      var remote = await ghFetchRemote();
+      log = remote || {};
+      saveLog(); // cache locally too
+      setSync('ok', 'sincronizado con GitHub');
+      renderEntryList(); renderPromedios(); renderActividad();
+    } catch(e){
+      setSync('err', 'error: ' + e.message);
+    }
+  }
+
+  async function syncToGitHub(){
+    if (!ghConfig) return; // local-only mode
+    setSync('busy', 'guardando en GitHub…');
+    try {
+      await ghPushRemote();
+      setSync('ok', 'sincronizado con GitHub');
+    } catch(e){
+      setSync('err', 'no se pudo guardar: ' + e.message);
+    }
+  }
+
+  function renderConfig(){
+    document.getElementById('ghOwner').value = ghConfig ? ghConfig.owner : '';
+    document.getElementById('ghRepo').value = ghConfig ? ghConfig.repo : '';
+    document.getElementById('ghToken').value = ghConfig ? ghConfig.token : '';
+  }
+
+  document.getElementById('ghSaveBtn').addEventListener('click', async function(){
+    var owner = document.getElementById('ghOwner').value.trim();
+    var repo = document.getElementById('ghRepo').value.trim();
+    var token = document.getElementById('ghToken').value.trim();
+    var msg = document.getElementById('ghMsg');
+    if (!owner || !repo || !token){
+      msg.className = 'config-msg err';
+      msg.textContent = 'Completa los tres campos.';
+      return;
+    }
+    ghConfig = { owner: owner, repo: repo, token: token };
+    localStorage.setItem(GH_CONFIG_KEY, JSON.stringify(ghConfig));
+    msg.className = 'config-msg';
+    msg.textContent = 'Conectando…';
+    try {
+      var remote = await ghFetchRemote();
+      // merge: keep whichever has more entries recorded per day being unlikely to conflict day-to-day
+      log = Object.assign({}, remote, log);
+      await ghPushRemote();
+      saveLog();
+      msg.className = 'config-msg ok';
+      msg.textContent = '✓ Conectado. Historial sincronizado.';
+      setSync('ok', 'sincronizado con GitHub');
+      renderEntryList(); renderPromedios(); renderActividad();
+    } catch(e){
+      msg.className = 'config-msg err';
+      msg.textContent = 'No se pudo conectar: ' + e.message;
+      setSync('err', 'error de conexión');
+    }
+  });
+
+  // ---------- helpers ----------
+  function pad(n){ return n < 10 ? '0'+n : ''+n; }
+  function toKey(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+  function parseKey(k){ var p = k.split('-'); return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2])); }
+  function todayKey(){ return toKey(new Date()); }
+  function daysBetween(a, b){ return Math.round((b - a) / 86400000); }
+
+  function saveLog(){ localStorage.setItem(LOG_KEY, JSON.stringify(log)); }
+
+  function entriesInRange(startKey, endKey){
+    var start = parseKey(startKey), end = parseKey(endKey);
+    var out = [];
+    Object.keys(log).forEach(function(k){
+      var d = parseKey(k);
+      if (d >= start && d <= end) out.push({ date:k, steps:log[k] });
+    });
+    return out;
+  }
+
+  function average(entries){
+    if (!entries.length) return null;
+    var sum = entries.reduce(function(s,e){ return s + e.steps; }, 0);
+    return sum / entries.length;
+  }
+
+  function fmt(n){
+    if (n === null || n === undefined) return '–';
+    return Math.round(n).toLocaleString('es-PE');
+  }
+
+  // ---------- tabs ----------
+  var tabs = document.querySelectorAll('.tab');
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      tabs.forEach(function(x){ x.classList.remove('active'); });
+      document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+      t.classList.add('active');
+      document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+      if (t.dataset.tab === 'prom') renderPromedios();
+      if (t.dataset.tab === 'act') renderActividad();
+      if (t.dataset.tab === 'cfg') renderConfig();
+    });
+  });
+
+  // ---------- HOY ----------
+  var dateInput = document.getElementById('dateInput');
+  var stepsInput = document.getElementById('stepsInput');
+  var saveBtn = document.getElementById('saveBtn');
+  var entryList = document.getElementById('entryList');
+
+  dateInput.value = todayKey();
+
+  saveBtn.addEventListener('click', function(){
+    var k = dateInput.value;
+    var v = parseInt(stepsInput.value, 10);
+    if (!k || isNaN(v) || v < 0) return;
+    log[k] = v;
+    saveLog();
+    stepsInput.value = '';
+    renderEntryList();
+    syncToGitHub();
+  });
+
+  function renderEntryList(){
+    var keys = Object.keys(log).sort().reverse().slice(0, 14);
+    if (!keys.length){
+      entryList.innerHTML = '<div class="empty">Aún no hay registros.</div>';
+      return;
+    }
+    entryList.innerHTML = keys.map(function(k){
+      var d = parseKey(k);
+      var label = d.toLocaleDateString('es-PE', { day:'2-digit', month:'short' });
+      return '<div class="entry-row">' +
+        '<span class="entry-date">' + label + '</span>' +
+        '<span class="entry-steps">' + fmt(log[k]) + '</span>' +
+        '<button class="entry-del" data-key="' + k + '">✕</button>' +
+        '</div>';
+    }).join('');
+    entryList.querySelectorAll('.entry-del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        delete log[btn.dataset.key];
+        saveLog();
+        renderEntryList();
+        syncToGitHub();
+      });
+    });
+  }
+
+  // ---------- PROMEDIOS ----------
+  var kcalFactorInput = document.getElementById('kcalFactor');
+  kcalFactorInput.value = kcalPer1000;
+  kcalFactorInput.addEventListener('change', function(){
+    var v = parseInt(kcalFactorInput.value, 10);
+    if (!v || v < 1) v = 45;
+    kcalPer1000 = v;
+    localStorage.setItem(KCAL_KEY, String(v));
+    renderPromedios();
+  });
+
+  function renderPromedios(){
+    var today = new Date();
+    var weekStart = new Date(today); weekStart.setDate(today.getDate() - 6);
+    var monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    var yearStart = parseKey(RANGE_START);
+
+    var weekEntries = entriesInRange(toKey(weekStart), toKey(today));
+    var monthEntries = entriesInRange(toKey(monthStart), toKey(today));
+    var yearEntries = entriesInRange(RANGE_START, toKey(today));
+
+    var avgWeek = average(weekEntries);
+    var avgMonth = average(monthEntries);
+    var avgYear = average(yearEntries);
+
+    document.getElementById('avgWeek').textContent = fmt(avgWeek);
+    document.getElementById('avgMonth').textContent = fmt(avgMonth);
+    document.getElementById('avgYear').textContent = fmt(avgYear);
+
+    function kcalFor(avg){ return avg === null ? null : (avg/1000) * kcalPer1000; }
+    document.getElementById('kcalDay').textContent = fmt(kcalFor(avgWeek));
+    document.getElementById('kcalWeek').textContent = fmt(kcalFor(avgWeek) ? kcalFor(avgWeek)*7 : null);
+    document.getElementById('kcalMonth').textContent = fmt(kcalFor(avgMonth) ? kcalFor(avgMonth)*30 : null);
+
+    var totalSteps = yearEntries.reduce(function(s,e){ return s + e.steps; }, 0);
+    document.getElementById('totalSteps').textContent = fmt(totalSteps);
+    document.getElementById('totalKm').textContent = fmt((totalSteps * 0.7) / 1000);
+    document.getElementById('totalDays').textContent = yearEntries.length;
+  }
+
+  // ---------- ACTIVIDAD ----------
+  function activityLevel(avg){
+    if (avg === null) return { label:'Sin datos', color:'#eceae2', text:'#6c7268' };
+    if (avg < 5000) return { label:'Sedentario', color:'#fbeaea', text:'#8f1d1d' };
+    if (avg < 7500) return { label:'Algo activo', color:'#fbf1e0', text:'#8a5c12' };
+    if (avg < 10000) return { label:'Activo', color:'#eef4ec', text:'#2c5c28' };
+    return { label:'Muy activo', color:'#e3f2e1', text:'#1f5c1a' };
+  }
+
+  function colorFor(steps){
+    if (steps === undefined) return 'var(--g0)';
+    if (steps < 3000) return 'var(--g0)';
+    if (steps < 5000) return 'var(--g1)';
+    if (steps < 7500) return 'var(--g2)';
+    if (steps < 10000) return 'var(--g3)';
+    return 'var(--g4)';
+  }
+
+  var tapInfo = document.getElementById('tapInfo');
+
+  function renderActividad(){
+    var today = new Date();
+    var weekStart = new Date(today); weekStart.setDate(today.getDate() - 6);
+    var weekEntries = entriesInRange(toKey(weekStart), toKey(today));
+    var lvl = activityLevel(average(weekEntries));
+    document.getElementById('weekBadge').innerHTML =
+      '<span class="badge" style="background:' + lvl.color + '; color:' + lvl.text + '">' + lvl.label + '</span>';
+
+    // build Monday-start weeks covering RANGE_START..RANGE_END
+    var start = parseKey(RANGE_START);
+    var end = parseKey(RANGE_END);
+    var startDow = (start.getDay() + 6) % 7; // 0=Mon
+    var gridStart = new Date(start); gridStart.setDate(start.getDate() - startDow);
+    var endDow = (end.getDay() + 6) % 7;
+    var gridEnd = new Date(end); gridEnd.setDate(end.getDate() + (6 - endDow));
+
+    var totalDays = daysBetween(gridStart, gridEnd) + 1;
+    var weeks = Math.ceil(totalDays / 7);
+
+    var html = '';
+    var cursor = new Date(gridStart);
+    for (var w = 0; w < weeks; w++){
+      html += '<div class="hm-week">';
+      for (var d = 0; d < 7; d++){
+        var inRange = cursor >= start && cursor <= end;
+        var k = toKey(cursor);
+        if (inRange){
+          var steps = log[k];
+          html += '<div class="hm-day" data-key="' + k + '" data-steps="' + (steps || '') + '" style="background:' + colorFor(steps) + '"></div>';
+        } else {
+          html += '<div class="hm-day out"></div>';
+        }
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      html += '</div>';
+    }
+    var hm = document.getElementById('heatmap');
+    hm.innerHTML = html;
+    hm.querySelectorAll('.hm-day[data-key]').forEach(function(cell){
+      cell.addEventListener('click', function(){
+        var k = cell.dataset.key;
+        var s = cell.dataset.steps;
+        var d = parseKey(k);
+        var label = d.toLocaleDateString('es-PE', { weekday:'long', day:'2-digit', month:'long' });
+        tapInfo.innerHTML = s ?
+          '<b>' + label + '</b> — ' + fmt(parseInt(s,10)) + ' pasos' :
+          '<b>' + label + '</b> — sin registro';
+      });
+    });
+
+    // scroll heatmap to the end (most recent) by default
+    var scrollBox = document.querySelector('.heatmap-scroll');
+    scrollBox.scrollLeft = scrollBox.scrollWidth;
+  }
+
+  // ---------- init ----------
+  renderEntryList();
+  renderPromedios();
+  renderActividad();
+  if (ghConfig) syncFromGitHub();
+  else setSync('', 'sin conectar a GitHub');
+
+})();
+</script>
+</body>
+</html>
